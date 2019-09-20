@@ -161,9 +161,6 @@ require get_template_directory() . '/classes/class-twentytwenty-walker-comment.p
 // Custom page walker.
 require get_template_directory() . '/classes/class-twentytwenty-walker-page.php';
 
-// Color calculations.
-require get_template_directory() . '/classes/class-twentytwenty-color.php';
-
 // Custom script loader class.
 require get_template_directory() . '/classes/class-twentytwenty-script-loader.php';
 
@@ -436,7 +433,13 @@ if ( ! function_exists( 'twentytwenty_block_editor_settings' ) ) {
 	function twentytwenty_block_editor_settings() {
 
 		// Block Editor Palette.
-		$editor_color_palette = array();
+		$editor_color_palette = array(
+			array(
+				'name'  => esc_html__( 'Accent Color' ),
+				'slug'  => 'accent',
+				'color' => twentytwenty_get_color_for_area( 'content', 'accent' ),
+			),
+		);
 
 		// Get the color options.
 		$accent_color_options = TwentyTwenty_Customize::get_color_options();
@@ -522,4 +525,101 @@ if ( ! function_exists( 'twentytwenty_read_more_tag' ) ) {
 	}
 	add_filter( 'the_content_more_link', 'twentytwenty_read_more_tag' );
 
+}
+
+if ( ! function_exists( 'twentytwenty_customize_controls_enqueue_scripts' ) ) {
+	/**
+	 * Enqueues scripts for customizer controls & settings.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	function twentytwenty_customize_controls_enqueue_scripts() {
+		$theme_version = wp_get_theme()->get( 'Version' );
+
+		// Add script for color calculations.
+		wp_enqueue_script( 'twentytwenty-color', get_template_directory_uri() . '/assets/js/color.js', [ 'wp-color-picker' ], $theme_version, false );
+
+		// Add script for controls.
+		wp_enqueue_script( 'twentytwenty-customize-controls', get_template_directory_uri() . '/assets/js/customize-controls.js', [ 'twentytwenty-color', 'customize-controls', 'underscore', 'jquery' ], $theme_version, false );
+		wp_localize_script( 'twentytwenty-customize-controls', 'backgroundColors', twentytwenty_get_customizer_color_vars() );
+	}
+
+	add_action( 'customize_controls_enqueue_scripts', 'twentytwenty_customize_controls_enqueue_scripts' );
+}
+
+if ( ! function_exists( 'twentytwenty_customize_preview_init' ) ) {
+	/**
+	 * Enqueue scripts for the customizer preview.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	function twentytwenty_customize_preview_init() {
+		$theme_version = wp_get_theme()->get( 'Version' );
+
+		wp_enqueue_script( 'twentytwenty-customize-preview', get_theme_file_uri( '/assets/js/customize-preview.js' ), array( 'customize-preview', 'jquery' ), $theme_version, true );
+		wp_localize_script( 'twentytwenty-customize-preview', 'backgroundColors', twentytwenty_get_customizer_color_vars() );
+	}
+
+	add_action( 'customize_preview_init', 'twentytwenty_customize_preview_init' );
+}
+
+if ( ! function_exists( 'twentytwenty_get_color_for_area' ) ) {
+	/**
+	 * Get accessible color for an area.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $area The area we want to get the colors for.
+	 * @param string $context Can be 'text' or 'accent'.
+	 * @return string Returns a HEX color.
+	 */
+	function twentytwenty_get_color_for_area( $area = 'content', $context = 'text' ) {
+
+		// Get the value from the theme-mod.
+		$settings = get_theme_mod(
+			'accent_accessible_colors',
+			array(
+				'content'       => array(
+					'text'   => '#000000',
+					'accent' => '#cd2653',
+				),
+				'header-footer' => array(
+					'text'   => '#000000',
+					'accent' => '#cd2653',
+				),
+			)
+		);
+
+		// If we have a value return it.
+		if ( isset( $settings[ $area ] ) && isset( $settings[ $area ][ $context ] ) ) {
+			return $settings[ $area ][ $context ];
+		}
+	}
+}
+
+if ( ! function_exists( 'twentytwenty_get_customizer_color_vars' ) ) {
+	function twentytwenty_get_customizer_color_vars() {
+		$colors = array(
+			'content' => array(
+				'setting'  => 'background_color',
+				'elements' => array(
+					'text'   => 'body',
+					// We're using #site-content a here to avoing changing styles for the header & footer in the preview.
+					'accent' => '#site-content a, .wp-block-button.is-style-outline, .has-drop-cap:not(:focus):first-letter, a.previous-post, a.next-post',
+				),
+			),
+			'header-footer' => array(
+				'setting'  => 'header_footer_background_color',
+				'elements' => array(
+					'text'   => '#site-header,#site-footer',
+					'accent' => '#site-header a,#site-header li,#site-footer a',
+				),
+			),
+		);
+		return $colors;
+	}
 }

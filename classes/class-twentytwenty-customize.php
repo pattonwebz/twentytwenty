@@ -75,8 +75,85 @@ if ( ! class_exists( 'TwentyTwenty_Customize' ) ) {
 				)
 			);
 
+			// Header & Footer Background Color.
+			$wp_customize->add_setting(
+				'header_footer_background_color',
+				array(
+					'default'           => '#ffffff',
+					'sanitize_callback' => 'sanitize_hex_color',
+					'transport'         => 'postMessage',
+				)
+			);
+
+			$wp_customize->add_control(
+				new WP_Customize_Color_Control(
+					$wp_customize,
+					'header_footer_background_color',
+					array(
+						'label'    => esc_html__( 'Header & Footer Background Color', 'twentytwenty' ),
+						'section'  => 'colors',
+						'priority' => 10,
+					)
+				)
+			);
+
 			/**
-			 * Colors.
+			 * Implementation for the accent color.
+			 * This is different to all other color options because of the accessibility enhancements.
+			 * The control is a hue-only colorpicker, and there is a separate setting that holds values
+			 * for other colors calculated based on the selected hue and various background-colors on the page.
+			 *
+			 * @since 1.0.0
+			 */
+
+			// Add the setting for the hue colorpicker.
+			$wp_customize->add_setting(
+				'accent_hue',
+				array(
+					'default'           => 344,
+					'type'              => 'theme_mod',
+					'sanitize_callback' => 'absint',
+					'transport'         => 'postMessage',
+				)
+			);
+
+			// Add setting to hold colors derived from the accent hue.
+			$wp_customize->add_setting(
+				'accent_accessible_colors',
+				array(
+					'default'           => array(
+						'content'       => array(
+							'text'   => '#000000',
+							'accent' => '#cd2653',
+						),
+						'header-footer' => array(
+							'text'   => '#000000',
+							'accent' => '#cd2653',
+						),
+					),
+					'type'              => 'theme_mod',
+					'transport'         => 'postMessage',
+					'sanitize_callback' => array( 'TwentyTwenty_Customize', 'sanitize_accent_accessible_colors' ),
+				)
+			);
+
+			// Add the hue-only colorpicker for the accent color.
+			$wp_customize->add_control(
+				new WP_Customize_Color_Control(
+					$wp_customize,
+					'accent_hue',
+					array(
+						'label'    => esc_html__( 'Accent Color Hue', 'twentytwenty' ),
+						'section'  => 'colors',
+						'settings' => 'accent_hue',
+						'priority' => 10,
+						'mode'     => 'hue',
+					)
+				)
+			);
+
+			/**
+			 * Custom Accent Colors.
 			*/
 			$accent_color_options = self::get_color_options();
 
@@ -228,7 +305,7 @@ if ( ! class_exists( 'TwentyTwenty_Customize' ) ) {
 			$wp_customize->add_setting(
 				'cover_template_overlay_background_color',
 				array(
-					'default'           => get_theme_mod( 'accent_color', '#cd2653' ),
+					'default'           => twentytwenty_get_color_for_area( 'content', 'accent' ),
 					'sanitize_callback' => 'sanitize_hex_color',
 				)
 			);
@@ -341,21 +418,39 @@ if ( ! class_exists( 'TwentyTwenty_Customize' ) ) {
 		}
 
 		/**
+		 * Sanitization callback for the "accent_accessible_colors" setting.
+		 *
+		 * @static
+		 * @access public
+		 * @since 1.0.0
+		 * @param array $value The value we want to sanitize.
+		 * @return array       Returns sanitized value. Each item in the array gets sanitized separately.
+		 */
+		public static function sanitize_accent_accessible_colors( $value ) {
+
+			// Make sure the value is an array. Do not typecast, use empty array as fallback.
+			$value = is_array( $value ) ? $value : array();
+
+			// Loop values.
+			foreach ( $value as $context => $values ) {
+
+				// Sanitization is applied to each item separately using sanitize_hex_color().
+				$value[ $context ] = array(
+					'text'   => ( isset( $value[ $context ]['text'] ) ) ? sanitize_hex_color( $value[ $context ]['text'] ) : '#000000',
+					'accent' => ( isset( $value[ $context ]['accent'] ) ) ? sanitize_hex_color( $value[ $context ]['accent'] ) : '#CD2653',
+				);
+			}
+
+			return $value;
+		}
+
+		/**
 		 * Return the sitewide color options included.
 		 * Note: These values are shared between the block editor styles and the customizer,
 		 * and abstracted to this function.
 		 */
 		public static function get_color_options() {
-			return apply_filters(
-				'twentytwenty_accent_color_options',
-				array(
-					'accent_color' => array(
-						'default' => '#cd2653',
-						'label'   => __( 'Accent Color', 'twentytwenty' ),
-						'slug'    => 'accent',
-					),
-				)
-			);
+			return apply_filters( 'twentytwenty_accent_color_options', array() );
 		}
 
 		/**

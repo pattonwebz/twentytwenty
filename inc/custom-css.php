@@ -52,9 +52,15 @@ if ( ! function_exists( 'twentytwenty_get_customizer_css' ) ) {
 	function twentytwenty_get_customizer_css( $type = 'front-end' ) {
 
 		// Get variables.
-		$accent          = sanitize_hex_color( get_theme_mod( 'accent_color' ) );
+		$body            = sanitize_hex_color( twentytwenty_get_color_for_area( 'content', 'text' ) );
+		$body_default    = '#000000';
+		$accent          = sanitize_hex_color( twentytwenty_get_color_for_area( 'content', 'accent' ) );
 		$accent_default  = '#cd2653';
 		$buttons_targets = apply_filters( 'twentytwenty_buttons_targets_front_end', 'button, .button, .faux-button, .wp-block-button__link, .wp-block-file__button, input[type=\'button\'], input[type=\'reset\'], input[type=\'submit\']' );
+
+		// Header.
+		$header_footer_text   = sanitize_hex_color( twentytwenty_get_color_for_area( 'header-footer', 'text' ) );
+		$header_footer_accent = sanitize_hex_color( twentytwenty_get_color_for_area( 'header-footer', 'accent' ) );
 
 		// Cover.
 		$cover         = sanitize_hex_color( get_theme_mod( 'cover_template_overlay_text_color' ) );
@@ -80,12 +86,22 @@ if ( ! function_exists( 'twentytwenty_get_customizer_css' ) ) {
 		if ( 'front-end' === $type ) {
 
 			// Colors.
+			if ( $body && $body !== $body_default ) {
+				twentytwenty_generate_css( 'body', 'color', $body );
+			}
+
 			// Element Specific.
 			if ( $accent && $accent !== $accent_default ) {
 				twentytwenty_generate_css( 'a, .wp-block-button.is-style-outline, .has-drop-cap:not(:focus):first-letter, a.previous-post, a.next-post', 'color', $accent );
 				twentytwenty_generate_css( 'blockquote, .wp-block-button.is-style-outline', 'border-color', $accent );
 				twentytwenty_generate_css( $buttons_targets, 'background-color', $accent );
 				twentytwenty_generate_css( '.footer-social a, .social-icons a, .comment-reply-link, .edit-comment-link', 'background-color', $accent );
+			}
+
+			// Header.
+			if ( $header_footer_text && $header_footer_accent ) {
+				twentytwenty_generate_css( '#site-header', 'color', $header_footer_text );
+				twentytwenty_generate_css( '#site-header a, #site-header li', 'color', $header_footer_accent );
 			}
 
 			if ( $cover && $cover !== $cover_default ) {
