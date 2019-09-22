@@ -27,10 +27,10 @@ get_header();
 	if ( is_search() ) {
 		global $wp_query;
 
-		$archive_title = sprintf( 
-			'%1$s %2$s', 
-			'<span class="color-accent">' . __( 'Search:', 'twentytwenty' ) . '</span>', 
-			'&ldquo;' . get_search_query() . '&rdquo;' 
+		$archive_title = sprintf(
+			'%1$s %2$s',
+			'<span class="color-accent">' . __( 'Search:', 'twentytwenty' ) . '</span>',
+			'&ldquo;' . get_search_query() . '&rdquo;'
 		);
 
 		if ( $wp_query->found_posts ) {
@@ -87,7 +87,13 @@ get_header();
 
 			<div class="no-search-results-form section-inner thin">
 
-				<?php get_search_form(); ?>
+				<?php
+				get_search_form(
+					array(
+						'label' => __( 'search again', 'twentytwenty' ),
+					)
+				);
+				?>
 
 			</div><!-- .no-search-results -->
 
